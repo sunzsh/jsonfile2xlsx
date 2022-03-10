@@ -1,0 +1,15 @@
+{
+  "name": "zb2xlsx",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "pkg . -t node12-win-x64,node12-linux-x64,node12-macos-x64 -o zb2xlsx -d"
+  },
+  "bin": "./index.js",
+  "author": "sunzsh",
+  "license": "ISC",
+  "dependencies": {
+    "exceljs": "^4.3.0"
+  }
+}

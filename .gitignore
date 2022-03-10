@@ -1,0 +1,14 @@
+.DS_Store
+node_modules/
+zb2xlsx-linux
+zb2xlsx-macos
+zb2xlsx-win.exe
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+package-lock.json
