@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "pkg . -t node12-win-x64,node12-linux-x64,node12-macos-x64 -o zb2xlsx -d"
+    "build": "pkg . -t node12-win-x64,node12-linux-x64,node12-macos-x64 -o txt2xlsx -d"
   },
   "bin": "./index.js",
   "author": "sunzsh",
