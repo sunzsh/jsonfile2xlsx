@@ -68,10 +68,18 @@ function convertXlsxToJson(filePath) {
         .then(() => {
             const worksheet = workbook.getWorksheet(1);
             const json = [];
+            let headers = [];
             worksheet.eachRow({ includeEmpty: true }, function(row, rowNumber) {
-                const rowValue = row.values;
-                rowValue.shift(); // Remove the first element which is undefined due to ExcelJS indexing
-                json.push(rowValue);
+                if (rowNumber === 1) {
+                    headers = row.values;
+                    headers.shift(); // Remove the first element which is undefined due to ExcelJS indexing
+                } else {
+                    const rowData = {};
+                    row.values.forEach((value, index) => {
+                        rowData[headers[index - 1]] = value; // Map each row's values to the headers
+                    });
+                    json.push(rowData);
+                }
             });
             return json;
         });
