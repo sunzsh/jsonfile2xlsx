@@ -3,10 +3,12 @@ const ExcelJS = require('exceljs')
 const path = require("path")
 
 const args = process.argv.slice(2);
-if (!args || args.length == 0) {
+if (!args || args.length < 2) {
     console.log('缺少参数！');
     process.exit(1);
 }
+
+const conversionType = args[0]; // New argument for conversion direction
 
 function translateColumnName(num) {
     let columnName = '';
@@ -20,8 +22,8 @@ function translateColumnName(num) {
     return columnName;
 }
 
-args.forEach(filePath => {
-    doConvert(filePath)
+args.slice(1).forEach(filePath => {
+    doConvert(filePath, conversionType)
 });
 
 function soildBorderForRow(row) {
@@ -60,52 +62,70 @@ function buildTitle(sheet, array) {
     soildBorderForRow(titleRow);
 }
 
-
-
-
-function doConvert(filePath) {
-    let array = readArray(filePath)
-    if (!array || array.length == 0) {
-        return ;
-    }
-
+function convertXlsxToJson(filePath) {
     const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet('Sheet1', {views:[{xSplit: 1}]});
-    buildTitle(sheet, array);
-    
-    array.forEach(item => {
-        const row = sheet.addRow(item);
-        row.font = {  size: 14 };
-        row.alignment = { vertical: 'middle', horizontal: 'center' };
-        row.height = 30;
-        soildBorderForRow(row);
-    });
+    return workbook.xlsx.readFile(filePath)
+        .then(() => {
+            const worksheet = workbook.getWorksheet(1);
+            const json = [];
+            worksheet.eachRow({ includeEmpty: true }, function(row, rowNumber) {
+                const rowValue = row.values;
+                rowValue.shift(); // Remove the first element which is undefined due to ExcelJS indexing
+                json.push(rowValue);
+            });
+            return json;
+        });
+}
 
-    // 自动筛选器
-    sheet.autoFilter = {
-        from: 'A1',
-        to: {
-          row: 1,
-          column: sheet.columns.length
+function doConvert(filePath, conversionType) {
+    if (conversionType === 'json2xlsx') {
+        let array = readArray(filePath)
+        if (!array || array.length == 0) {
+            return ;
         }
-      }
-    sheet.properties.defaultRowHeight = 30;
 
-    // 设置条纹背景
-    sheet.addConditionalFormatting({
-        ref: `A1:${translateColumnName(sheet.columns.length)}${array.length}`,
-        rules: [
-            {
-            type: 'expression',
-            formulae: ['MOD(ROW(),2)=0'],
-            style: {fill: {type: 'pattern', pattern: 'solid', bgColor: {argb: 'CECECE'}}},
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Sheet1', {views:[{xSplit: 1}]});
+        buildTitle(sheet, array);
+        
+        array.forEach(item => {
+            const row = sheet.addRow(item);
+            row.font = {  size: 14 };
+            row.alignment = { vertical: 'middle', horizontal: 'center' };
+            row.height = 30;
+            soildBorderForRow(row);
+        });
+
+        // 自动筛选器
+        sheet.autoFilter = {
+            from: 'A1',
+            to: {
+              row: 1,
+              column: sheet.columns.length
             }
-        ]
-    })
+          }
+        sheet.properties.defaultRowHeight = 30;
 
-    let xlsxFilePath = path.join(path.dirname(filePath), path.basename(filePath, ".txt") + ".xlsx", );
-    workbook.xlsx.writeFile(xlsxFilePath);
+        // 设置条纹背景
+        sheet.addConditionalFormatting({
+            ref: `A1:${translateColumnName(sheet.columns.length)}${array.length}`,
+            rules: [
+                {
+                type: 'expression',
+                formulae: ['MOD(ROW(),2)=0'],
+                style: {fill: {type: 'pattern', pattern: 'solid', bgColor: {argb: 'CECECE'}}},
+                }
+            ]
+        })
 
+        let xlsxFilePath = path.join(path.dirname(filePath), path.basename(filePath, ".txt") + ".xlsx", );
+        workbook.xlsx.writeFile(xlsxFilePath);
+    } else if (conversionType === 'xlsx2json') {
+        convertXlsxToJson(filePath).then(json => {
+            const jsonFilePath = path.join(path.dirname(filePath), path.basename(filePath, ".xlsx") + ".json");
+            fs.writeFileSync(jsonFilePath, JSON.stringify(json, null, 2));
+        });
+    }
 }
 
 
